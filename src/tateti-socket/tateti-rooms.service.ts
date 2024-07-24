@@ -16,8 +16,11 @@ export class RoomService {
       ]
     }
     this.rooms.push(newRoom)
-    const room = this.joinRoom({ playerName: player, roomId: newRoom.id })
-    return { ...room, ...(room.success && { room: newRoom }) }
+    return {
+      success: true,
+      room: newRoom,
+      message: 'Sala creada exitosamente'
+    }
   }
   findAvailablePublicRoom() {
     const room = this.rooms.find((room) => room.type === 'public' && (!room.players[0].name || !room.players[1].name))
@@ -30,22 +33,25 @@ export class RoomService {
     if (roomIndex === -1) {
       return {
         success: false,
+        room,
         message: 'Sala no encontrada'
       }
     }
     if (room.players[0].name && room.players[1].name) {
       return {
         success: false,
+        room,
         message: 'La sala está llena'
       }
     }
-    const playerIndex = room.players[0].name ? 0 : 1
+    const playerIndex = room.players[0].name ? 1 : 0
     this.rooms[roomIndex].players[playerIndex] = {
       ...room.players[playerIndex],
       name: playerName
     }
     return {
       success: true,
+      room: this.rooms[roomIndex],
       message: 'Jugador unido exitosamente'
     }
   }
