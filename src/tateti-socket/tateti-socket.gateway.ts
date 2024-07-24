@@ -52,4 +52,12 @@ export class TatetiSocketGateway implements OnGatewayConnection, OnGatewayDiscon
     }
     return availableRoom
   }
+
+  @SubscribeMessage('leaveRoom')
+  handleLeaveRoom(@ConnectedSocket() client: Socket, @MessageBody() data: { roomId: string; playerName: string }) {
+    client.leave(data.roomId)
+    const { room } = this.roomService.leaveRoom(data.roomId, data.playerName)
+    client.to(data.roomId).emit('playerLeft', { playerName: data.playerName, room })
+    return 'eliminado de la sala'
+  }
 }
