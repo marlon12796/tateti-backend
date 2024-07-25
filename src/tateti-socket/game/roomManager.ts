@@ -1,6 +1,6 @@
 // room-manager.ts
 import { Room } from './room'
-import type { CreateRoomService, JoinRoomService, Room as RoomType } from '../interfaces/game'
+import type { CreateRoomService, GameState, JoinRoomService, Room as RoomType } from '../interfaces/game'
 
 export class RoomManager {
   private rooms: Room[] = []
@@ -14,11 +14,15 @@ export class RoomManager {
 
   createRoom(data: CreateRoomService) {
     const { player, type, clientId } = data
-    const roomId = this.generateRoomId()
+    const roomId = crypto.randomUUID()
     const room = new Room(roomId, type)
-    room.addPlayer(player, clientId)
+    room.addPlayer(player, clientId, true)
     this.rooms.push(room)
-    return this.createResponse(true, room, this.messages.roomCreated)
+    return this.createResponse({
+      success: true,
+      room,
+      message: this.messages.roomCreated
+    })
   }
 
   findAvailablePublicRoom() {
@@ -29,20 +33,44 @@ export class RoomManager {
   joinRoom(data: JoinRoomService) {
     const { playerName, roomId, clientId } = data
     const room = this.rooms.find((room) => room.id === roomId)
-    if (!room) return this.createResponse(false, null, this.messages.roomNotFound)
-    if (!room.addPlayer(playerName, clientId)) return this.createResponse(false, room, this.messages.roomFull)
-    return this.createResponse(true, room, this.messages.playerJoined)
+    if (!room)
+      return this.createResponse({
+        success: false,
+        room: null,
+        message: this.messages.roomNotFound
+      })
+    const playerAdded = room.addPlayer(playerName, clientId)
+    return this.createResponse({
+      success: playerAdded,
+      room,
+      message: playerAdded ? this.messages.playerJoined : this.messages.roomFull
+    })
   }
 
   leaveRoom(roomId: string, playerName: string) {
     const roomIndex = this.rooms.findIndex((room) => room.id === roomId)
-    if (roomIndex === -1) return this.createResponse(false, null, this.messages.roomNotFound)
+    if (roomIndex === -1)
+      return this.createResponse({
+        success: false,
+        room: null,
+        message: this.messages.roomNotFound
+      })
     const room = this.rooms[roomIndex]
-    if (!room.removePlayer(playerName)) return this.createResponse(false, room, this.messages.roomNotFound)
+    if (!room.removePlayer(playerName))
+      return this.createResponse({
+        success: false,
+        room,
+        message: this.messages.roomNotFound
+      })
     if (room.isEmpty()) this.rooms.splice(roomIndex, 1)
 
-    return this.createResponse(true, room, this.messages.playerLeft)
+    return this.createResponse({
+      success: true,
+      room,
+      message: this.messages.playerLeft
+    })
   }
+
   disconnectRoom(clientId: string) {
     for (let i = 0; i < this.rooms.length; i++) {
       const room = this.rooms[i]
@@ -61,11 +89,15 @@ export class RoomManager {
     }))
   }
 
-  private generateRoomId() {
-    return crypto.randomUUID()
-  }
-
-  private createResponse(success: boolean, room: Room | null, message: string) {
+  private createResponse({
+    success,
+    room,
+    message
+  }: {
+    success: boolean
+    room: Room | null
+    message: string
+  }) {
     return {
       success,
       room,
