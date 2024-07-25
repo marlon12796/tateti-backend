@@ -7,17 +7,20 @@ import {
   WebSocketGateway,
   WebSocketServer
 } from '@nestjs/websockets'
-import { Server, Socket } from 'socket.io'
+import { Socket } from 'socket.io'
 import { RoomService } from './tateti-rooms.service'
 import type { CreateRoom, JoinRoom } from './interfaces/game'
+import { Namespace } from 'socket.io'
 @WebSocketGateway({
   cors: {
-    origin: '*'
-  }
+    origin: ['http://localhost:4200']
+  },
+  pingInterval: 10000,
+  pingTimeout: 15000
 })
 export class TatetiSocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
-  private server: Server
+  private server: Namespace
   constructor(private readonly roomService: RoomService) {}
 
   handleConnection(client: Socket) {
@@ -25,7 +28,7 @@ export class TatetiSocketGateway implements OnGatewayConnection, OnGatewayDiscon
   }
 
   handleDisconnect(client: Socket) {
-    console.log(`Client disconnected: ${client.id}`)
+    this.roomService.disconnectRoom(client.id)
   }
 
   @SubscribeMessage('searchRoom')
@@ -35,14 +38,14 @@ export class TatetiSocketGateway implements OnGatewayConnection, OnGatewayDiscon
   }
   @SubscribeMessage('createRoom')
   handleCreateRoom(@ConnectedSocket() client: Socket, @MessageBody() data: CreateRoom) {
-    const availableRoom = this.roomService.createRoom(data)
+    const availableRoom = this.roomService.createRoom({ ...data, clientId: client.id })
     client.join(availableRoom.room.id)
     return availableRoom
   }
 
   @SubscribeMessage('joinRoom')
   handeJoinRoom(@ConnectedSocket() client: Socket, @MessageBody() data: JoinRoom) {
-    const availableRoom = this.roomService.joinRoom(data)
+    const availableRoom = this.roomService.joinRoom({ ...data, clientId: client.id })
     if (availableRoom.success) {
       client.join(data.roomId)
       this.server.to(data.roomId).emit('playerJoined', {

@@ -1,6 +1,7 @@
 interface Player {
   name: string
   health: number
+  clientId: string
 }
 type TypeRoom = 'public' | 'private'
 export interface Room {
@@ -15,4 +16,12 @@ export interface CreateRoom {
 export interface JoinRoom {
   roomId: Room['id']
   playerName: string
+}
+
+// ---- union
+export type CreateRoomService = CreateRoom & {
+  clientId: string
+}
+export type JoinRoomService = JoinRoom & {
+  clientId: string
 }
