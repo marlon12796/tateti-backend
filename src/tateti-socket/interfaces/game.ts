@@ -3,7 +3,7 @@ interface Player {
   health: number
   clientId: string
 }
-type TypeRoom = 'public' | 'private'
+export type TypeRoom = 'public' | 'private'
 export interface Room {
   id: `${string}-${string}-${string}-${string}-${string}`
   type: TypeRoom
