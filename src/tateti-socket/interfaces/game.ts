@@ -26,19 +26,21 @@ export type JoinRoomService = JoinRoom & {
   clientId: string
 }
 // -----------------game
-export type GameState =
-  | 'WAITING_FOR_PARTNER'
-  | 'TURN_PLAYER1'
-  | 'TURN_PLAYER2'
-  | 'DRAW'
-  | 'VICTORY_PLAYER1'
-  | 'VICTORY_PLAYER2'
-  | 'ABANDONED'
-  | 'FINAL_VICTORY_PLAYER1'
-  | 'FINAL_VICTORY_PLAYER2'
+export const enum GameState {
+  WAITING_FOR_PARTNER = 'ESPERANDO_COMPAÑERO',
+  TURN_PLAYER1 = 'TURNO_JUGADOR1',
+  TURN_PLAYER2 = 'TURNO_JUGADOR2',
+  DRAW = 'EMPATE',
+  VICTORY_PLAYER1 = 'VICTORIA_JUGADOR1',
+  VICTORY_PLAYER2 = 'VICTORIA_JUGADOR2',
+  ABANDONED = 'ABANDONADO',
+  FINAL_VICTORY_PLAYER1 = 'VICTORIA_FINAL_JUGADOR1',
+  FINAL_VICTORY_PLAYER2 = 'VICTORIA_FINAL_JUGADOR2'
+}
+
 // ----player
 
-export enum PlayerTurn {
+export const enum PlayerTurn {
   PLAYER_1 = 0,
   PLAYER_2 = 1
 }

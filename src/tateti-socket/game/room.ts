@@ -14,7 +14,7 @@ export class Room {
       { name: '', health: 0, clientId: '' }
     ]
     this.playerTurn = PlayerTurn['PLAYER_1']
-    this.state = 'WAITING_FOR_PARTNER'
+    this.state = GameState['WAITING_FOR_PARTNER']
   }
 
   addPlayer(name: string, clientId: string, isInitialCreate: boolean = false) {
@@ -30,19 +30,19 @@ export class Room {
     const playerIndex = this.players.findIndex((player) => player.name === name)
     if (playerIndex === -1) return false
     this.players[playerIndex] = { name: '', health: 0, clientId: '' }
-    this.setState('ABANDONED')
+    this.setState(GameState['ABANDONED'])
     return true
   }
   removePlayerByClientId(clientId: string) {
     const playerIndex = this.players.findIndex((player) => player.clientId === clientId)
     if (playerIndex === -1) return false
     this.players[playerIndex] = { name: '', health: 0, clientId: '' }
-    this.setState('ABANDONED')
+    this.setState(GameState['ABANDONED'])
     return true
   }
   switchTurn() {
     this.playerTurn = this.playerTurn === PlayerTurn['PLAYER_1'] ? PlayerTurn['PLAYER_2'] : PlayerTurn['PLAYER_1']
-    this.setState(this.playerTurn === PlayerTurn['PLAYER_1'] ? 'TURN_PLAYER2' : 'TURN_PLAYER1')
+    this.setState(this.playerTurn === PlayerTurn['PLAYER_1'] ? GameState['TURN_PLAYER2'] : GameState['TURN_PLAYER1'])
   }
   isEmpty() {
     return this.players.every((player) => player.name === '')
