@@ -8,6 +8,9 @@ export interface Room {
   id: `${string}-${string}-${string}-${string}-${string}`
   type: TypeRoom
   players: [Player, Player]
+  state: GameState
+  playerTurn: PlayerTurn
+  board: (PlayerTurn | '')[]
 }
 export interface CreateRoom {
   player: string
@@ -17,6 +20,11 @@ export interface JoinRoom {
   roomId: Room['id']
   playerName: string
 }
+export interface MakeMove {
+  roomId: Room['id']
+  playerPosition: PlayerTurn
+  boardPosition: BOARD_POSITION
+}
 
 // ---- union
 export type CreateRoomService = CreateRoom & {
@@ -24,6 +32,11 @@ export type CreateRoomService = CreateRoom & {
 }
 export type JoinRoomService = JoinRoom & {
   clientId: string
+}
+export type CreateResponse = {
+  success: boolean
+  room: Room | null
+  message: string
 }
 // -----------------game
 export const enum GameState {
@@ -37,6 +50,8 @@ export const enum GameState {
   FINAL_VICTORY_PLAYER1 = 'VICTORIA_FINAL_JUGADOR1',
   FINAL_VICTORY_PLAYER2 = 'VICTORIA_FINAL_JUGADOR2'
 }
+
+export type BOARD_POSITION = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8
 
 // ----player
 

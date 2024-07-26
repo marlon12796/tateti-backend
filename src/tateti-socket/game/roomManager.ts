@@ -1,6 +1,6 @@
 // room-manager.ts
 import { Room } from './room'
-import type { CreateRoomService, GameState, JoinRoomService, Room as RoomType } from '../interfaces/game'
+import type { CreateResponse, CreateRoomService, JoinRoomService, MakeMove, Room as RoomType } from '../interfaces/game'
 
 export class RoomManager {
   private rooms: Room[] = []
@@ -9,7 +9,9 @@ export class RoomManager {
     roomFull: 'La sala está llena',
     roomCreated: 'Sala creada exitosamente',
     playerJoined: 'Jugador unido exitosamente',
-    playerLeft: 'Jugador ha salido de la sala'
+    playerLeft: 'Jugador ha salido de la sala',
+    playerInvalidPostion: 'Posición inválida para el movimiento',
+    playerValidPostion: 'El jugador ha realizado su movimiento'
   }
 
   createRoom(data: CreateRoomService) {
@@ -29,7 +31,16 @@ export class RoomManager {
     const room = this.rooms.find((room) => room.type === 'public' && room.players.some((player) => player.name === ''))
     return room ? room.id : null
   }
+  makeMoveRoom(data: MakeMove) {
+    const room = this.rooms.find((room) => room.id === data.roomId)
 
+    const isMove = room.movePlayer(data.playerPosition, data.boardPosition)
+    return this.createResponse({
+      success: isMove,
+      room,
+      message: !isMove ? this.messages.playerInvalidPostion : this.messages.playerValidPostion
+    })
+  }
   joinRoom(data: JoinRoomService) {
     const { playerName, roomId, clientId } = data
     const room = this.rooms.find((room) => room.id === roomId)
@@ -85,19 +96,14 @@ export class RoomManager {
     return this.rooms.map((room) => ({
       id: room.id,
       type: room.type,
-      players: room.players
+      players: room.players,
+      state: room.state,
+      playerTurn: room.playerTurn,
+      board: room.board
     }))
   }
 
-  private createResponse({
-    success,
-    room,
-    message
-  }: {
-    success: boolean
-    room: Room | null
-    message: string
-  }) {
+  private createResponse({ success, room, message }: CreateResponse) {
     return {
       success,
       room,
