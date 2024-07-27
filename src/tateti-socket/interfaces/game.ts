@@ -9,7 +9,7 @@ export interface Room {
   type: TypeRoom
   players: [Player, Player]
   state: GameState
-  playerTurn: PlayerTurn
+  initialPlayer: PlayerTurn
   board: (PlayerTurn | '')[]
 }
 export interface CreateRoom {

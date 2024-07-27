@@ -98,8 +98,8 @@ export class RoomManager {
       type: room.type,
       players: room.players,
       state: room.state,
-      playerTurn: room.playerTurn,
-      board: room.board
+      board: room.board,
+      initialPlayer: room.initialPlayer
     }))
   }
 

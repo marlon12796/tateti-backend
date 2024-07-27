@@ -1,3 +1,4 @@
+import { VictoryChecker } from 'src/utils/victoryChecker'
 import { BOARD_POSITION, GameState, MakeMove, PlayerTurn, Room as RoomType } from '../interfaces/game'
 
 export class Room {
@@ -5,8 +6,8 @@ export class Room {
   readonly type: RoomType['type']
   players: RoomType['players']
   state: GameState
-  playerTurn: PlayerTurn
   board: (PlayerTurn | '')[]
+  initialPlayer: PlayerTurn
 
   constructor(id: RoomType['id'], type: RoomType['type']) {
     this.id = id
@@ -15,7 +16,7 @@ export class Room {
       { name: '', health: 3, clientId: '' },
       { name: '', health: 0, clientId: '' }
     ]
-    this.playerTurn = PlayerTurn.PLAYER_1
+    this.initialPlayer = PlayerTurn.PLAYER_1
     this.state = GameState.WAITING_FOR_PARTNER
     this.board = Array(9).fill('')
   }
@@ -23,7 +24,7 @@ export class Room {
   addPlayer(name: string, clientId: string, isInitialCreate = false): boolean {
     const emptySlotIndex = this.players.findIndex((player) => player.name === '')
     if (emptySlotIndex === -1) return false
-    if (!isInitialCreate) this.switchTurn()
+    if (!isInitialCreate) this.toggleState()
 
     this.players[emptySlotIndex] = { name, health: 3, clientId }
     return true
@@ -37,16 +38,21 @@ export class Room {
     return true
   }
 
-  movePlayer(position: MakeMove['playerPosition'], boardPosition: BOARD_POSITION): boolean {
+  movePlayer(player: MakeMove['playerPosition'], boardPosition: BOARD_POSITION): boolean {
     if (
-      (position === PlayerTurn.PLAYER_1 && this.state !== GameState.TURN_PLAYER1) ||
-      (position === PlayerTurn.PLAYER_2 && this.state !== GameState.TURN_PLAYER2)
+      (player === PlayerTurn.PLAYER_1 && this.state !== GameState.TURN_PLAYER1) ||
+      (player === PlayerTurn.PLAYER_2 && this.state !== GameState.TURN_PLAYER2)
     )
       return false
 
     if (boardPosition < 0 || boardPosition >= 9 || this.board[boardPosition] !== '') return false
-    this.board[boardPosition] = position
-    this.toggleTurn(position)
+    this.board[boardPosition] = player
+    this.toggleTurn(player)
+    const result = VictoryChecker.checkVictory({ board: this.board, player })
+    if (result === 'DRAW') this.setState(GameState.DRAW)
+    if (typeof result !== 'string' && result?.combination) {
+      this.decreaseHealth(player)
+    }
     return true
   }
 
@@ -59,15 +65,24 @@ export class Room {
   }
 
   private toggleTurn(currentTurn: PlayerTurn): void {
-    this.playerTurn = currentTurn === PlayerTurn.PLAYER_1 ? PlayerTurn.PLAYER_2 : PlayerTurn.PLAYER_1
-    this.setState(this.playerTurn === PlayerTurn.PLAYER_1 ? GameState.TURN_PLAYER1 : GameState.TURN_PLAYER2)
+    this.setState(currentTurn === PlayerTurn.PLAYER_1 ? GameState.TURN_PLAYER2 : GameState.TURN_PLAYER1)
   }
 
-  private switchTurn(): void {
-    this.playerTurn = this.playerTurn === PlayerTurn.PLAYER_1 ? PlayerTurn.PLAYER_1 : PlayerTurn.PLAYER_2
-    this.setState(this.playerTurn === PlayerTurn.PLAYER_1 ? GameState.TURN_PLAYER1 : GameState.TURN_PLAYER2)
+  private toggleState(): void {
+    this.setState(this.state === GameState.TURN_PLAYER1 ? GameState.TURN_PLAYER2 : GameState.TURN_PLAYER1)
   }
+  private decreaseHealth(winner: PlayerTurn): void {
+    const loserIndex = winner === PlayerTurn.PLAYER_1 ? PlayerTurn.PLAYER_2 : PlayerTurn.PLAYER_1
 
+    const loser = this.players[loserIndex]
+    if (loser.health > 0) {
+      loser.health -= 1
+      const totalWinner = winner === PlayerTurn.PLAYER_1 ? GameState.FINAL_VICTORY_PLAYER1 : GameState.FINAL_VICTORY_PLAYER2
+      const partialWinner = winner === PlayerTurn.PLAYER_1 ? GameState.VICTORY_PLAYER1 : GameState.VICTORY_PLAYER2
+      const newState = loser.health === 0 ? totalWinner : partialWinner
+      this.setState(newState)
+    }
+  }
   isEmpty(): boolean {
     return this.players.every((player) => player.name === '')
   }
