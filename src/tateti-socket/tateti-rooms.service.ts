@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { RoomManager } from './game/roomManager'
-import type { CreateRoomService, JoinRoomService, MakeMove } from './interfaces/game'
+import type { CreateRoomService, JoinRoomService, MakeMove, NewTurn } from './interfaces/game'
 
 @Injectable()
 export class RoomService {
@@ -20,6 +20,9 @@ export class RoomService {
 
   leaveRoom(roomId: string, clientId: string) {
     return this.roomManager.leaveRoom(roomId, clientId)
+  }
+  makeNewTurn(data: NewTurn) {
+    return this.roomManager.makeNewTurnRoom(data)
   }
   makeMoveRoom(data: MakeMove) {
     return this.roomManager.makeMoveRoom(data)

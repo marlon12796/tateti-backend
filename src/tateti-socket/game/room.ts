@@ -21,10 +21,11 @@ export class Room {
     this.board = Array(9).fill('')
   }
 
+  // Métodos de Gestión de Jugadores
   addPlayer(name: string, clientId: string, isInitialCreate = false): boolean {
     const emptySlotIndex = this.players.findIndex((player) => player.name === '')
     if (emptySlotIndex === -1) return false
-    if (!isInitialCreate) this.toggleState()
+    if (!isInitialCreate) this.toggleGameState()
 
     this.players[emptySlotIndex] = { name, health: 3, clientId }
     return true
@@ -38,24 +39,6 @@ export class Room {
     return true
   }
 
-  movePlayer(player: MakeMove['playerPosition'], boardPosition: BOARD_POSITION): boolean {
-    if (
-      (player === PlayerTurn.PLAYER_1 && this.state !== GameState.TURN_PLAYER1) ||
-      (player === PlayerTurn.PLAYER_2 && this.state !== GameState.TURN_PLAYER2)
-    )
-      return false
-
-    if (boardPosition < 0 || boardPosition >= 9 || this.board[boardPosition] !== '') return false
-    this.board[boardPosition] = player
-    this.toggleTurn(player)
-    const result = VictoryChecker.checkVictory({ board: this.board, player })
-    if (result === 'DRAW') this.setState(GameState.DRAW)
-    if (typeof result !== 'string' && result?.combination) {
-      this.decreaseHealth(player)
-    }
-    return true
-  }
-
   removePlayerByClientId(clientId: string): boolean {
     const playerIndex = this.players.findIndex((player) => player.clientId === clientId)
     if (playerIndex === -1) return false
@@ -64,16 +47,45 @@ export class Room {
     return true
   }
 
-  private toggleTurn(currentTurn: PlayerTurn): void {
-    this.setState(currentTurn === PlayerTurn.PLAYER_1 ? GameState.TURN_PLAYER2 : GameState.TURN_PLAYER1)
+  // Métodos de Movimiento
+  movePlayer(player: MakeMove['playerPosition'], boardPosition: BOARD_POSITION): boolean {
+    if (
+      (player === PlayerTurn.PLAYER_1 && this.state !== GameState.TURN_PLAYER1) ||
+      (player === PlayerTurn.PLAYER_2 && this.state !== GameState.TURN_PLAYER2)
+    )
+      return false
+    if (boardPosition < 0 || boardPosition >= 9 || this.board[boardPosition] !== '') return false
+    this.board[boardPosition] = player
+    this.toggleGameState(player)
+    const result = VictoryChecker.checkVictory({ board: this.board, player })
+    if (result === 'DRAW') this.setState(GameState.DRAW)
+    if (typeof result !== 'string' && result?.combination) this.decreaseHealth(player)
+
+    return true
   }
 
-  private toggleState(): void {
-    this.setState(this.state === GameState.TURN_PLAYER1 ? GameState.TURN_PLAYER2 : GameState.TURN_PLAYER1)
+  // Métodos de Turnos
+  newTurn() {
+    if (this.state === GameState.FINAL_VICTORY_PLAYER1 || this.state === GameState.FINAL_VICTORY_PLAYER2) return false
+    this.cleanBoard()
+    this.setInitialPlayer(this.initialPlayer)
+    this.setState(this.initialPlayer === PlayerTurn.PLAYER_1 ? GameState.TURN_PLAYER1 : GameState.TURN_PLAYER2)
+    return true
   }
+
+  private cleanBoard() {
+    this.board = Array(9).fill('')
+  }
+
+  // Métodos Internos
+  private toggleGameState(turn?: PlayerTurn): void {
+    turn !== undefined
+      ? this.setState(turn === PlayerTurn.PLAYER_1 ? GameState.TURN_PLAYER2 : GameState.TURN_PLAYER1)
+      : this.setState(this.state === GameState.TURN_PLAYER1 ? GameState.TURN_PLAYER2 : GameState.TURN_PLAYER1)
+  }
+
   private decreaseHealth(winner: PlayerTurn): void {
     const loserIndex = winner === PlayerTurn.PLAYER_1 ? PlayerTurn.PLAYER_2 : PlayerTurn.PLAYER_1
-
     const loser = this.players[loserIndex]
     if (loser.health > 0) {
       loser.health -= 1
@@ -83,11 +95,16 @@ export class Room {
       this.setState(newState)
     }
   }
+
+  // Métodos de Estado
   isEmpty(): boolean {
     return this.players.every((player) => player.name === '')
   }
 
   setState(newState: GameState): void {
     this.state = newState
+  }
+  setInitialPlayer(player: PlayerTurn): void {
+    this.initialPlayer = player === PlayerTurn.PLAYER_1 ? PlayerTurn.PLAYER_2 : PlayerTurn.PLAYER_1
   }
 }

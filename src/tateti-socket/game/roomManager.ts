@@ -1,6 +1,6 @@
 // room-manager.ts
 import { Room } from './room'
-import type { CreateResponse, CreateRoomService, JoinRoomService, MakeMove, Room as RoomType } from '../interfaces/game'
+import type { CreateResponse, CreateRoomService, JoinRoomService, MakeMove, NewTurn, Room as RoomType } from '../interfaces/game'
 
 export class RoomManager {
   private rooms: Room[] = []
@@ -11,7 +11,11 @@ export class RoomManager {
     playerJoined: 'Jugador unido exitosamente',
     playerLeft: 'Jugador ha salido de la sala',
     playerInvalidPostion: 'Posición inválida para el movimiento',
-    playerValidPostion: 'El jugador ha realizado su movimiento'
+    playerValidPostion: 'El jugador ha realizado su movimiento',
+    NewTurn: 'Los jugador comenzaron otro turno',
+    turnNotAllowed: 'No se puede iniciar un nuevo turno',
+    gameFinished: 'El juego ha finalizado',
+    gameTie: 'El juego ha terminado en empate'
   }
 
   createRoom(data: CreateRoomService) {
@@ -19,6 +23,7 @@ export class RoomManager {
     const roomId = crypto.randomUUID()
     const room = new Room(roomId, type)
     room.addPlayer(player, clientId, true)
+
     this.rooms.push(room)
     return this.createResponse({
       success: true,
@@ -39,6 +44,15 @@ export class RoomManager {
       success: isMove,
       room,
       message: !isMove ? this.messages.playerInvalidPostion : this.messages.playerValidPostion
+    })
+  }
+  makeNewTurnRoom(data: NewTurn) {
+    const room = this.rooms.find((room) => room.id === data.roomId)
+    const isNewTurn = room.newTurn()
+    return this.createResponse({
+      success: isNewTurn,
+      room,
+      message: isNewTurn ? this.messages.gameFinished : this.messages.turnNotAllowed
     })
   }
   joinRoom(data: JoinRoomService) {

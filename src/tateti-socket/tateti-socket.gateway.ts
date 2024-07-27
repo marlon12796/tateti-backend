@@ -9,7 +9,7 @@ import {
 } from '@nestjs/websockets'
 import { Socket } from 'socket.io'
 import { RoomService } from './tateti-rooms.service'
-import { type CreateRoom, type JoinRoom, type MakeMove } from './interfaces/game'
+import { NewTurn, type CreateRoom, type JoinRoom, type MakeMove } from './interfaces/game'
 import { Namespace } from 'socket.io'
 @WebSocketGateway({
   cors: {
@@ -49,7 +49,7 @@ export class TatetiSocketGateway implements OnGatewayConnection, OnGatewayDiscon
     const availableRoom = this.roomService.joinRoom({ ...data, clientId: client.id })
     if (availableRoom.success) {
       client.join(data.roomId)
-      this.server.to(data.roomId).emit('playerJoined', {
+      client.to(data.roomId).emit('playerJoined', {
         message: 'Un nuevo jugador se ha unido a la sala',
         room: availableRoom.room
       })
@@ -67,10 +67,15 @@ export class TatetiSocketGateway implements OnGatewayConnection, OnGatewayDiscon
   @SubscribeMessage('makeMove')
   handleMakeMoveRoom(@ConnectedSocket() client: Socket, @MessageBody() data: MakeMove) {
     const response = this.roomService.makeMoveRoom(data)
-    if (response.success) {
-      console.log(response.room.players)
-      client.to(data.roomId).emit('makeMove', response.room)
-    }
+    if (response.success) client.to(data.roomId).emit('makeMove', response.room)
+
+    return response
+  }
+  @SubscribeMessage('newTurn')
+  handleNewTurnRoom(@ConnectedSocket() client: Socket, @MessageBody() data: NewTurn) {
+    const response = this.roomService.makeNewTurn(data)
+    if (response.success) client.to(data.roomId).emit('newTurn', response.room)
+
     return response
   }
 }
