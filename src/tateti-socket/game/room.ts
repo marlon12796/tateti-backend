@@ -73,7 +73,7 @@ export class Room {
     return true
   }
 
-  private cleanBoard() {
+  cleanBoard() {
     this.board = Array(9).fill('')
   }
 
@@ -96,8 +96,7 @@ export class Room {
     }
   }
 
-  // Métodos de Estado
-  isEmpty(): boolean {
+  isEmptyPlayers() {
     return this.players.every((player) => player.name === '')
   }
 

@@ -39,7 +39,7 @@ export class RoomManager {
   makeMoveRoom(data: MakeMove) {
     const room = this.rooms.find((room) => room.id === data.roomId)
 
-    const isMove = room.movePlayer(data.playerPosition, data.boardPosition)
+    const isMove = room?.movePlayer(data.playerPosition, data.boardPosition)
     return this.createResponse({
       success: isMove,
       room,
@@ -74,21 +74,16 @@ export class RoomManager {
 
   leaveRoom(roomId: string, playerName: string) {
     const roomIndex = this.rooms.findIndex((room) => room.id === roomId)
-    if (roomIndex === -1)
-      return this.createResponse({
-        success: false,
-        room: null,
-        message: this.messages.roomNotFound
-      })
+
     const room = this.rooms[roomIndex]
-    if (!room.removePlayer(playerName))
+    if (!room?.removePlayer(playerName))
       return this.createResponse({
         success: false,
         room,
         message: this.messages.roomNotFound
       })
-    if (room.isEmpty()) this.rooms.splice(roomIndex, 1)
-
+    if (room.isEmptyPlayers()) this.rooms.splice(roomIndex, 1)
+    room.cleanBoard()
     return this.createResponse({
       success: true,
       room,
@@ -100,7 +95,7 @@ export class RoomManager {
     for (let i = 0; i < this.rooms.length; i++) {
       const room = this.rooms[i]
       if (room.removePlayerByClientId(clientId)) {
-        if (room.isEmpty()) this.rooms.splice(i, 1)
+        if (room.isEmptyPlayers()) this.rooms.splice(i, 1)
         break
       }
     }

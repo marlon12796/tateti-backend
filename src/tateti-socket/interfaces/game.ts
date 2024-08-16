@@ -20,6 +20,9 @@ export interface JoinRoom {
   roomId: Room['id']
   playerName: string
 }
+export type LeaveRoom = JoinRoom & {
+  numberPlayer: number
+}
 export interface MakeMove {
   roomId: Room['id']
   playerPosition: PlayerTurn

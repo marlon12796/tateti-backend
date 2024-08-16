@@ -9,7 +9,7 @@ import {
 } from '@nestjs/websockets'
 import { Socket } from 'socket.io'
 import { RoomService } from './tateti-rooms.service'
-import { NewTurn, type CreateRoom, type JoinRoom, type MakeMove } from './interfaces/game'
+import { LeaveRoom, NewTurn, type CreateRoom, type JoinRoom, type MakeMove } from './interfaces/game'
 import { Namespace } from 'socket.io'
 @WebSocketGateway({
   cors: {
@@ -25,11 +25,12 @@ export class TatetiSocketGateway implements OnGatewayConnection, OnGatewayDiscon
 
   handleConnection(client: Socket) {
     console.log(`Client connected: ${client.id}`)
-    console.log(this.roomService.getRooms())
+    // console.log(this.roomService.getRooms())
   }
 
   handleDisconnect(client: Socket) {
     this.roomService.disconnectRoom(client.id)
+    console.log('aqui')
   }
 
   @SubscribeMessage('searchRoom')
@@ -58,11 +59,12 @@ export class TatetiSocketGateway implements OnGatewayConnection, OnGatewayDiscon
   }
 
   @SubscribeMessage('leaveRoom')
-  handleLeaveRoom(@ConnectedSocket() client: Socket, @MessageBody() data: JoinRoom) {
+  handleLeaveRoom(@ConnectedSocket() client: Socket, @MessageBody() data: LeaveRoom) {
     client.leave(data.roomId)
     const { room } = this.roomService.leaveRoom(data.roomId, data.playerName)
-    client.to(data.roomId).emit('playerLeft', { playerName: data.playerName, room })
-    return 'eliminado de la sala'
+    client.to(data.roomId).emit('playerLeft', { playerName: data.playerName, room, numberPlayer: data.numberPlayer })
+
+    return { playerName: data.playerName, room, numberPlayer: data.numberPlayer }
   }
   @SubscribeMessage('makeMove')
   handleMakeMoveRoom(@ConnectedSocket() client: Socket, @MessageBody() data: MakeMove) {
