@@ -25,12 +25,10 @@ export class TatetiSocketGateway implements OnGatewayConnection, OnGatewayDiscon
 
   handleConnection(client: Socket) {
     console.log(`Client connected: ${client.id}`)
-    // console.log(this.roomService.getRooms())
   }
 
   handleDisconnect(client: Socket) {
     this.roomService.disconnectRoom(client.id)
-    console.log('aqui')
   }
 
   @SubscribeMessage('searchRoom')

@@ -1,4 +1,4 @@
-interface Player {
+export interface Player {
   name: string
   health: number
   clientId: string
