@@ -9,7 +9,7 @@ import {
 } from '@nestjs/websockets'
 import { Socket } from 'socket.io'
 import { RoomService } from './tateti-rooms.service'
-import { LeaveRoom, NewTurn, type CreateRoom, type JoinRoom, type MakeMove } from './interfaces/game'
+import { LeaveRoom, NewTurn, VoteForNewGame, type CreateRoom, type JoinRoom, type MakeMove } from './interfaces/game'
 import { Namespace } from 'socket.io'
 @WebSocketGateway({
   cors: {
@@ -75,7 +75,12 @@ export class TatetiSocketGateway implements OnGatewayConnection, OnGatewayDiscon
   handleNewTurnRoom(@ConnectedSocket() client: Socket, @MessageBody() data: NewTurn) {
     const response = this.roomService.makeNewTurn(data)
     if (response.success) client.to(data.roomId).emit('newTurn', response.room)
-
+    return response
+  }
+  @SubscribeMessage('voteForNewGame')
+  handleVoteForNewGame(@ConnectedSocket() client: Socket, @MessageBody() data: VoteForNewGame) {
+    const response = this.roomService.voteForNewGame(data)
+    if (response.success) client.to(data.roomId).emit('voteForNewGame', response.room)
     return response
   }
 }

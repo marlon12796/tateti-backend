@@ -8,6 +8,7 @@ export class Room {
   state: GameState
   board: (PlayerTurn | '')[]
   initialPlayer: PlayerTurn
+  votes: Set<PlayerTurn>
 
   constructor(id: RoomType['id'], type: RoomType['type']) {
     this.id = id
@@ -19,9 +20,18 @@ export class Room {
     this.initialPlayer = PlayerTurn.PLAYER_1
     this.state = GameState.WAITING_FOR_PARTNER
     this.board = Array(9).fill('')
+    this.votes = new Set()
   }
 
-  // Métodos de Gestión de Jugadores
+  /**
+   * Adds a player to the room.
+   *
+   * @param name - The name of the player to be added.
+   * @param clientId - The unique identifier of the player's client.
+   * @param isInitialCreate - Indicates whether this is the initial creation of the room.
+   *                          If true, the game state will not be toggled. Default is false.
+   * @returns A boolean indicating whether the player was successfully added.
+   */
   addPlayer(name: string, clientId: string, isInitialCreate = false): boolean {
     const emptySlotIndex = this.players.findIndex((player) => player.name === '')
     if (emptySlotIndex === -1) return false
@@ -49,7 +59,16 @@ export class Room {
     this.setState(GameState.ABANDONED)
     return true
   }
-
+  /**
+   * Attempts to make a move for the specified player at the given board position.
+   *
+   * @param player - The player making the move. Must be either PlayerTurn.PLAYER_1 or PlayerTurn.PLAYER_2.
+   * @param boardPosition - The position on the game board where the player wants to place their mark.
+   *                        Must be a valid index (0-8) and the position must be empty.
+   *
+   * @returns A boolean indicating whether the move was successful.
+   *          Returns false if the game state does not allow the player to make a move,
+   */
   movePlayer(player: MakeMove['playerPosition'], boardPosition: BOARD_POSITION): boolean {
     if (
       (player === PlayerTurn.PLAYER_1 && this.state !== GameState.TURN_PLAYER1) ||
@@ -66,7 +85,12 @@ export class Room {
     return true
   }
 
-  // Métodos de Turnos
+  /**
+   * Begins a new turn in the game.
+   *
+   * @returns A boolean indicating whether a new turn was successfully started.
+   *          Returns false if the game is in a state where a new turn cannot be initiated.
+   */
   newTurn() {
     if (this.state === GameState.FINAL_VICTORY_PLAYER1 || this.state === GameState.FINAL_VICTORY_PLAYER2) return false
     this.cleanBoard()
@@ -78,7 +102,22 @@ export class Room {
   cleanBoard() {
     this.board = Array(9).fill('')
   }
+  //  votacion
+  /**
+   * Allows players to vote for a new game after a final victory.
+   *
+   * @param player - The player who is casting the vote. Must be either PlayerTurn.PLAYER_1 or PlayerTurn.PLAYER_2.
+   *
+   * @returns A boolean indicating whether the vote was successful.
+   */
+  voteForNewGame(player: PlayerTurn) {
+    if (![GameState.FINAL_VICTORY_PLAYER1, GameState.FINAL_VICTORY_PLAYER2].includes(this.state)) return false
+    if (this.votes.has(player)) return false
+    this.votes.add(player)
+    if (this.votes.size === 2) this.resetGame()
 
+    return true
+  }
   // Métodos Internos
   private toggleGameState(turn?: PlayerTurn) {
     turn !== undefined
@@ -107,5 +146,11 @@ export class Room {
   }
   setInitialPlayer(player: PlayerTurn) {
     this.initialPlayer = player === PlayerTurn.PLAYER_1 ? PlayerTurn.PLAYER_2 : PlayerTurn.PLAYER_1
+  }
+  private resetGame() {
+    this.cleanBoard()
+    this.setInitialPlayer(this.initialPlayer)
+    this.setState(GameState.WAITING_FOR_PARTNER)
+    this.votes.clear()
   }
 }

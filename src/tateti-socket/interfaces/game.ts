@@ -31,6 +31,10 @@ export interface MakeMove {
 export interface NewTurn {
   roomId: Room['id']
 }
+export interface VoteForNewGame {
+  roomId: Room['id']
+  playerTurn: PlayerTurn
+}
 
 // ---- union
 export type CreateRoomService = CreateRoom & {
