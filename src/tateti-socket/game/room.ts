@@ -56,6 +56,7 @@ export class Room {
     const otherPlayerIndex = playerIndex === PlayerTurn.PLAYER_1 ? PlayerTurn.PLAYER_2 : PlayerTurn.PLAYER_1
     this.players[otherPlayerIndex].health = 3
     this.players[playerIndex] = { name: '', health: 0, clientId: '' }
+    this.votes = new Set()
     this.setState(GameState.ABANDONED)
     return true
   }
@@ -79,7 +80,7 @@ export class Room {
     this.board[boardPosition] = player
     this.toggleGameState(player)
     const result = VictoryChecker.checkVictory({ board: this.board, player })
-    if (result === 'DRAW') this.setState(GameState.DRAW)
+    if (result === GameState.DRAW) this.setState(GameState.DRAW)
     if (typeof result !== 'string' && result?.combination) this.decreaseHealth(player)
 
     return true
@@ -94,7 +95,7 @@ export class Room {
   newTurn() {
     if (this.state === GameState.FINAL_VICTORY_PLAYER1 || this.state === GameState.FINAL_VICTORY_PLAYER2) return false
     this.cleanBoard()
-    this.setInitialPlayer(this.initialPlayer)
+    this.switchInitialPlayer(this.initialPlayer)
     this.setState(this.initialPlayer === PlayerTurn.PLAYER_1 ? GameState.TURN_PLAYER1 : GameState.TURN_PLAYER2)
     return true
   }
@@ -111,10 +112,12 @@ export class Room {
    * @returns A boolean indicating whether the vote was successful.
    */
   voteForNewGame(player: PlayerTurn) {
-    if (![GameState.FINAL_VICTORY_PLAYER1, GameState.FINAL_VICTORY_PLAYER2].includes(this.state)) return false
+    if (![GameState.FINAL_VICTORY_PLAYER1, GameState.FINAL_VICTORY_PLAYER2, GameState.VOTING_FOR_NEW_GAME].includes(this.state))
+      return false
     if (this.votes.has(player)) return false
     this.votes.add(player)
-    if (this.votes.size === 2) this.resetGame()
+    this.setState(GameState.VOTING_FOR_NEW_GAME)
+    if (this.votes.size === 2) this.resetGameNewPlay()
 
     return true
   }
@@ -144,13 +147,20 @@ export class Room {
   setState(newState: GameState) {
     this.state = newState
   }
-  setInitialPlayer(player: PlayerTurn) {
+  /**
+   * Switches the initial player for the next game.
+   *
+   * @param player - The current initial player.
+   *                 If it's PLAYER_1, switches to PLAYER_2, and vice versa.
+   */
+  switchInitialPlayer(player: PlayerTurn) {
     this.initialPlayer = player === PlayerTurn.PLAYER_1 ? PlayerTurn.PLAYER_2 : PlayerTurn.PLAYER_1
   }
-  private resetGame() {
+  private resetGameNewPlay() {
     this.cleanBoard()
-    this.setInitialPlayer(this.initialPlayer)
-    this.setState(GameState.WAITING_FOR_PARTNER)
+    this.switchInitialPlayer(this.initialPlayer)
+    this.players.forEach((player) => (player.health = 3))
+    this.setState(this.initialPlayer === PlayerTurn.PLAYER_1 ? GameState.TURN_PLAYER1 : GameState.TURN_PLAYER2)
     this.votes.clear()
   }
 }

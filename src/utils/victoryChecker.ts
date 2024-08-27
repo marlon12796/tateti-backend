@@ -1,4 +1,4 @@
-import { BOARD_POSITION, PlayerTurn } from 'src/tateti-socket/interfaces/game'
+import { BOARD_POSITION, GameState, PlayerTurn } from 'src/tateti-socket/interfaces/game'
 interface VictoryCheckerTypes {
   board: (PlayerTurn | '')[]
   player: PlayerTurn
@@ -25,7 +25,7 @@ export class VictoryChecker {
       if (this.isWinningCombination(board, combination, player)) return { player, combination }
     }
 
-    return this.isDraw(board) ? 'DRAW' : null
+    return this.isDraw(board) ? GameState.DRAW : null
   }
 
   private static isWinningCombination(board: (PlayerTurn | '')[], indices: BOARD_POSITION[], player: PlayerTurn) {

@@ -77,16 +77,16 @@ export class RoomManager {
     })
   }
   voteForNewGame(data: VoteForNewGame) {
-    const { playerTurn, roomId } = data
+    const { numberPlayer, roomId } = data
     const room = this.rooms.find((room) => room.id === roomId)
-    if (!room)
+    if (!room) {
       return this.createResponse({
         success: false,
         room: null,
         message: this.messages.roomNotFound
       })
-
-    const voteRegistered = room.voteForNewGame(playerTurn)
+    }
+    const voteRegistered = room.voteForNewGame(numberPlayer)
 
     return this.createResponse({
       success: voteRegistered,
@@ -130,14 +130,15 @@ export class RoomManager {
       players: room.players,
       state: room.state,
       board: room.board,
-      initialPlayer: room.initialPlayer
+      initialPlayer: room.initialPlayer,
+      votes: room.votes
     }))
   }
 
   private createResponse({ success, room, message }: CreateResponse) {
     return {
       success,
-      room,
+      room: room ? { ...room, votes: Array.from(room.votes) } : null,
       message
     }
   }
