@@ -13,8 +13,11 @@ import { LeaveRoom, NewTurn, VoteForNewGame, type CreateRoom, type JoinRoom, typ
 import { Namespace } from 'socket.io'
 @WebSocketGateway({
   cors: {
-    origin: ['http://localhost:4200']
+    origin: [`http://localhost:${process.env.FRONTED_PORT ?? 4200}`, `http://localhost:${process.env.FRONTED_PORT ?? 8080}`],
+    credentials: true,
+    methods: ['GET', 'POST']
   },
+  path:"/socket.io",
   pingInterval: 10000,
   pingTimeout: 15000
 })
